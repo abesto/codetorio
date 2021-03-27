@@ -1,16 +1,24 @@
 local C = codetorio
 
 function twin_smelters(cursor, facing)
-    cursor:fork():east(1):build("inserter", facing):east(1):build("inserter", facing):west(2):south(1):build(
-        "stone-furnace"):east(2):build("stone-furnace"):west(2):south(2):east(1):build("inserter", facing):east(1)
-        :build("inserter", facing)
+    -- Start: top-left. End: bottom-left
+    cursor:fork():east():build("inserter", facing):east():build("inserter", facing)
+    cursor:south():fork():build("stone-furnace"):east(2):build("stone-furnace"):west(2)
+    cursor:south(2):fork():east():build("inserter", facing):east():build("inserter", facing)
 end
 
 function quad_smelters(cursor)
-    cursor:fork():start_conveyor():east(4)
-    twin_smelters(cursor:south(1), C.north)
-    cursor:south(2):fork():east(4):start_conveyor():west(4)
-    twin_smelters(cursor:south(6), C.south)
+    -- Start: top-left. End: top-right
+    local top = cursor.position.y
+    cursor:fork():start_conveyor():east(3)
+    twin_smelters(cursor:south(), C.north)
+    cursor:south():fork():east(3):start_conveyor():west(3)
+    twin_smelters(cursor:south(), C.south)
+    cursor:south():start_conveyor():east(3):stop_conveyor()
+    cursor:north(cursor.position.y - top)
 end
 
-quad_smelters(C.cursor())
+local cursor = C.cursor()
+for i = 0, 48, 4 do
+    quad_smelters(cursor:east())
+end

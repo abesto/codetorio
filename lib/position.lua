@@ -26,6 +26,9 @@ function position.new(x_or_raw, y)
     assert(self.x ~= nil)
     assert(self.y ~= nil)
 
+    self.x = math.floor(self.x)
+    self.y = math.floor(self.y)
+
     setmetatable(self, {
         __index = Position
     })
