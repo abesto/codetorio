@@ -1,50 +1,42 @@
+if global.script == nil then
+    global.script = ""
+end
+
 codetorio = {
-    player = nil,
-    frame = nil,
-    textfield = nil
+    east = defines.direction.east,
+    west = defines.direction.west,
+    north = defines.direction.north,
+    south = defines.direction.south
 }
+require "lib.buildings"
+require "lib.cursor"
 
-codetorio.conveyor = function(position, length)
-    local surface = codetorio.player.surface
-    local x0 = position.x
-    local y0 = position.y
+local C = codetorio
 
-    if x0 == nil then
-        x0 = position[1]
-        y0 = position[2]
-    end
-
-    for x = x0, x0 + length, 1 do
-        surface.create_entity {
-            name = "entity-ghost",
-            inner_name = "transport-belt",
-            position = {x, y0},
-            force = codetorio.player.force
-        }
-    end
+function store_player(event)
+    C.player = game.get_player(event.player_index)
 end
 
 script.on_event(defines.events.on_lua_shortcut, function(event)
     local prototype_name = event.prototype_name
-    local player = game.get_player(event.player_index)
-    codetorio.player = player
+    store_player(event)
 
     if prototype_name == "open-codetorio" then
-        local screen = player.gui.screen
-        codetorio.frame = screen.add {
+        local screen = C.player.gui.screen
+        if screen.codetorio then
+            return
+        end
+
+        local frame = screen.add {
             type = "frame",
             name = "codetorio",
             caption = "Codetorio"
         }
 
-        local frame = codetorio.frame
-        codetorio.textfield = frame.add {
+        local textfield = frame.add {
             type = "text-box",
             name = "codetorio-text",
-            text = [[codetorio.conveyor({
-    codetorio.player.position.x,
-    codetorio.player.position.y
-}, 10)]],
+            text = global.script,
             style = "reader_textbox"
         }
 
@@ -58,16 +50,31 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
             name = "codetorio-close",
             caption = "Close"
         }
+
+        frame.location = {50, 50}
     end
 end)
 
 script.on_event(defines.events.on_gui_click, function(event)
     local element = event.element
+    store_player(event)
 
     if element.name == "codetorio-close" then
-        codetorio.frame.destroy()
+        C.player.gui.screen.codetorio.destroy()
     elseif element.name == "codetorio-run" then
-        local f = load(codetorio.textfield.text)
-        f()
+        local f = load(global.script)
+        local status, err = pcall(f)
+        if not status then
+            game.print(err)
+        end
+    end
+end)
+
+script.on_event(defines.events.on_gui_text_changed, function(event)
+    local element = event.element
+    store_player(event)
+
+    if element.name == "codetorio-text" then
+        global.script = element.text
     end
 end)
